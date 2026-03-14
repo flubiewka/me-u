@@ -1,15 +1,70 @@
-<?php
+﻿<?php
 session_start();
 
-// Если пользователь нажал "Выйти" или еще не залогинился
-if (!isset($_SESSION['user_id'])) {
-    // Показываем только страницу логина
-    include 'pages/login.php';
-    exit; // Остальной код (меню, футер) не загрузится
+require_once 'php/db.php';
+
+if (isset($_SESSION['user_id'])) {
+    header('Location: php/app.php');
+    exit;
 }
 
-// Если мы тут — значит пользователь залогинен. Показываем каркас сайта:
-include 'includes/header.php'; // Тут ваше меню
-include 'pages/' . ($_GET['page'] ?? 'home') . ".php";
-include 'includes/footer.php';
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $login = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+
+    $result = loginUser($pdo, $login, $password);
+
+    if (is_array($result)) {
+        $_SESSION['user_id'] = $result['LOGIN'];
+        $_SESSION['user_email'] = $result['LOGIN'];
+        $_SESSION['imie'] = $result['IMIE'];
+        $_SESSION['nazwisko'] = $result['NAZWISKO'];
+        $_SESSION['role_id'] = $result['ROLE_ID'];
+        header('Location: php/app.php');
+        exit;
+    } else {
+        $error = $result;
+    }
+}
 ?>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beezy - Logowanie</title>
+
+    <link href="css/common.css" rel="stylesheet">
+    <link href="css/login.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app-background"></div>
+
+    <div id="login-container">
+        <div class="login-box">
+            <h1 class="login-title">Beezy</h1>
+
+            <?php if ($error): ?>
+                <div style="color: red; font-size: 14px; margin-bottom: 10px;">
+                    <?php echo htmlspecialchars($error); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" class="login-inputs">
+                <input type="email"
+                       name="email"
+                       class="login-input"
+                       placeholder="Email"
+                       required>
+                <input type="password"
+                       name="password"
+                       class="login-input"
+                       placeholder="Hasło"
+                       required>
+                <button type="submit" class="login-button">Zaloguj się</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
